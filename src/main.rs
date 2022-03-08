@@ -1,3 +1,4 @@
+use std::fs;
 use clap::{AppSettings, arg};
 
 fn main() {
@@ -7,5 +8,12 @@ fn main() {
         .setting(AppSettings::DeriveDisplayOrder)
         .get_matches();
 
-    dbg!(app);
+    let input_path = match app.value_of("inputfile") {
+        Some(f) => f.to_string(),
+        None => panic!("please specify target ELF file."),
+    };
+
+    let dts = fs::read_to_string(input_path).expect("opening file failed.");
+
+    dbg!(dts);
 }
