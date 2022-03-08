@@ -1,3 +1,5 @@
+mod dtb;
+
 use std::fs;
 use clap::{AppSettings, arg};
 
@@ -13,7 +15,10 @@ fn main() {
         None => panic!("please specify target ELF file."),
     };
 
-    let dts = fs::read_to_string(input_path).expect("opening file failed.");
+    let dts = fs::read_to_string(input_path)
+        .expect("opening file failed.")
+        .replace("  ", "");
+    let dtb = dtb::make_dtb(dts);
 
-    dbg!(dts);
+    dbg!(dtb);
 }
