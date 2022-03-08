@@ -1,10 +1,12 @@
 mod parse;
-mod util;
+pub mod util;
 
+use std::io::Write;
+use std::fs::File;
 use std::collections::HashMap;
 
 #[allow(non_camel_case_types)]
-struct fdt_header {
+pub struct fdt_header {
     magic: u32,
     totalsize: u32,
     off_dt_struct: u32,
@@ -95,7 +97,7 @@ pub enum FdtNodeKind {
     END = 0x9,
 }
 
-pub fn make_dtb(dts: String) -> Vec<u8> {
+pub fn make_dtb(dts: String) -> dtb_mmap {
     let mut mmap: dtb_mmap = dtb_mmap {
             reserve: vec![0x0, 0x0],
             structure: Vec::new(),
@@ -114,10 +116,10 @@ pub fn make_dtb(dts: String) -> Vec<u8> {
     }
     mmap.write_nodekind(FdtNodeKind::END);
 
-    make_dtb_mmap(mmap)
+    mmap
 }
 
-fn make_dtb_mmap(mmap: dtb_mmap) -> Vec<u8> {
+pub fn write_dtb(mmap: dtb_mmap, path: Option<&str>) -> Result<(), Box<dyn std::error::Error>>{
     let reserve = mmap.reserve
         .iter()
         .flat_map(|x| x.to_be_bytes())
@@ -152,23 +154,23 @@ fn make_dtb_mmap(mmap: dtb_mmap) -> Vec<u8> {
         size_dt_struct,
     };
 
+    let output_path = path.unwrap_or("./output.dts");
+    let mut file = File::create(output_path)?;
 
-    let mut mmap: Vec<u8> = Vec::new();
-    mmap.extend(header.magic.to_be_bytes());
-    mmap.extend(header.totalsize.to_be_bytes());
-    mmap.extend(header.off_dt_struct.to_be_bytes());
-    mmap.extend(header.off_dt_strings.to_be_bytes());
-    mmap.extend(header.off_mem_rsvmap.to_be_bytes());
-    mmap.extend(header.version.to_be_bytes());
-    mmap.extend(header.last_comp_version.to_be_bytes());
-    mmap.extend(header.boot_cpuid_phys.to_be_bytes());
-    mmap.extend(header.size_dt_strings.to_be_bytes());
-    mmap.extend(header.size_dt_struct.to_be_bytes());
-    mmap.extend(reserve);
-    mmap.extend(structure);
-    mmap.extend(strings);
+    file.write_all(&header.magic.to_be_bytes())?;
+    file.write_all(&header.totalsize.to_be_bytes())?;
+    file.write_all(&header.off_dt_struct.to_be_bytes())?;
+    file.write_all(&header.off_dt_strings.to_be_bytes())?;
+    file.write_all(&header.off_mem_rsvmap.to_be_bytes())?;
+    file.write_all(&header.version.to_be_bytes())?;
+    file.write_all(&header.last_comp_version.to_be_bytes())?;
+    file.write_all(&header.boot_cpuid_phys.to_be_bytes())?;
+    file.write_all(&header.size_dt_strings.to_be_bytes())?;
+    file.write_all(&header.size_dt_struct.to_be_bytes())?;
+    file.write_all(&reserve)?;
+    file.write_all(&structure)?;
+    file.write_all(&strings)?;
 
-    mmap
+    Ok(())
 }
-
 
