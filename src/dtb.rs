@@ -70,11 +70,8 @@ impl dtb_mmap {
     }
 
     pub fn write_nodename(&mut self, name: &str) {
-        let offset = self.regist_string("node_name");
-        self.structure.push(name.len() as u32); // data len
-        self.structure.push(offset); // prop name offset
         self.structure.append(
-            &mut name
+            &mut format!("{name}\0")
                 .to_string()
                 .into_bytes()
                 .chunks(4)
@@ -131,9 +128,14 @@ pub fn write_dtb(mmap: dtb_mmap, path: Option<&str>) -> Result<(), Box<dyn std::
         .flat_map(|x| x.to_be_bytes())
         .collect::<Vec<u8>>();
 
-    let strings = mmap.strings.table.keys()
+    let mut str_table = mmap.strings.table
+        .iter()
+        .collect::<Vec<(&String, &u32)>>();
+    str_table.sort_by(|a, b| a.1.cmp(&b.1));
+    let strings = str_table
+        .iter()
         .cloned()
-        .flat_map(|s| s.into_bytes())
+        .flat_map(|(k, _v)| k.clone().into_bytes())
         .collect::<Vec<u8>>();
 
     let size_dt_header = 0x28;
