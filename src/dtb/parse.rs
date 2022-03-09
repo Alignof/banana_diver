@@ -97,10 +97,12 @@ pub fn parse_node(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
 pub fn parse_line(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
     dbg!(&lines.peek());
 
-    if lines.peek().unwrap().chars().last() == Some('{') {
-        parse_node(lines, mmap);
-    } else {
-        parse_property(lines, mmap);
+    if !util::consume(lines, "") {
+        if lines.peek().unwrap().chars().last() == Some('{') {
+            parse_node(lines, mmap);
+        } else {
+            parse_property(lines, mmap);
+        }
     }
 }
 
