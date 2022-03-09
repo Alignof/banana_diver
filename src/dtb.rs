@@ -70,6 +70,11 @@ impl dtb_mmap {
     }
 
     pub fn write_nodename(&mut self, name: &str) {
+        let name = match name {
+            "/" => "",
+            _ => name,
+        };
+
         self.structure.append(
             &mut format!("{name}\0")
                 .to_string()
