@@ -52,8 +52,10 @@ impl dtb_mmap {
         let offset_of_name = self.strings.current_offset;
         self.strings.table
             .entry(name.clone())
-            .or_insert(self.strings.current_offset);
-        self.strings.current_offset += name.len() as u32;
+            .or_insert_with(|| {
+                self.strings.current_offset += name.len() as u32;
+                offset_of_name
+            });
 
         offset_of_name
     }
