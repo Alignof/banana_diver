@@ -5,7 +5,7 @@ use super::{dtb_mmap, FdtNodeKind};
 pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
     dbg!(data);
     let data_ch = &mut data.chars();
-    let (bin, size): (Vec<u32>, u32) = match data_ch.next().unwrap() {
+    match data_ch.next().unwrap() {
         '"' => {
             let str_data = format!("{}\0", data_ch
                 .take_while(|c| *c != '"')
@@ -21,6 +21,11 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
                     u32::from_be_bytes(s)
                 })
                 .collect();
+
+            if data_ch.last() != Some(';') {
+                panic!("{} <-- ';' expected.", data);
+            }
+
             (bin, size)
         },
         '<' => {
@@ -42,16 +47,15 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
                 })
                 .collect::<Vec<u32>>();
             let size = bin.len() as u32 * 4;
+
+            if data_ch.last() != Some(';') {
+                panic!("{} <-- ';' expected.", data);
+            }
+
             (bin, size)
         },
         _ => panic!("prop data is invalid"),
-    };
-
-    if data_ch.last() != Some(';') {
-        panic!("{} <-- ';' expected.", data);
     }
-
-    (bin, size)
 }
 
 pub fn parse_property(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
