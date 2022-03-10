@@ -2,14 +2,16 @@ use std::iter::Peekable;
 use super::util;
 use super::{dtb_mmap, FdtNodeKind};
 
-pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> Vec<u32> {
+pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
     dbg!(data);
     let data_ch = &mut data.chars();
-    let data_bin: Vec<u32> = match data_ch.next().unwrap() {
+    let (bin, size): (Vec<u32>, u32) = match data_ch.next().unwrap() {
         '"' => {
-            data_ch
+            let str_data = format!("{}\0", data_ch
                 .take_while(|c| *c != '"')
-                .collect::<String>()
+                .collect::<String>());
+            let size = str_data.len() as u32;
+            let bin = str_data
                 .into_bytes()
                 .chunks(4)
                 .map(|bs| {
@@ -18,10 +20,11 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> Vec<u32> {
                     s[.. bs.len()].clone_from_slice(bs);
                     u32::from_be_bytes(s)
                 })
-                .collect()
+                .collect();
+            (bin, size)
         },
         '<' => {
-            data_ch
+            let bin = data_ch
                 .take_while(|c| *c != '>')
                 .collect::<String>()
                 .split(' ')
@@ -37,7 +40,9 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> Vec<u32> {
                         })
                     }
                 })
-                .collect::<Vec<u32>>()
+                .collect::<Vec<u32>>();
+            let size = bin.len() as u32 * 4;
+            (bin, size)
         },
         _ => panic!("prop data is invalid"),
     };
@@ -46,7 +51,7 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> Vec<u32> {
         panic!("{} <-- ';' expected.", data);
     }
 
-    data_bin
+    (bin, size)
 }
 
 pub fn parse_property(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
@@ -56,8 +61,8 @@ pub fn parse_property(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap
     mmap.write_nodekind(FdtNodeKind::PROP);
     if util::consume(tokens, "=") {
         let raw_data = tokens.collect::<Vec<_>>().join(" ");
-        let mut data_map = parse_data(&raw_data, mmap);
-        mmap.write_property(prop_name, &mut data_map);
+        let (mut data_map, data_size) = parse_data(&raw_data, mmap);
+        mmap.write_property(prop_name, &mut data_map, data_size);
 
         if prop_name == "#address-cells" {
             if let Some(addr_cells) = mmap.current_label.clone() {
