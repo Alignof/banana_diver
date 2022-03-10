@@ -73,6 +73,9 @@ pub fn parse_property(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap
                 mmap.regist_label(addr_cells, data_map[0]);
             }
         }
+    } else {
+        // only property's name
+        mmap.write_property(prop_name, &mut Vec::new(), 0);
     }
 }
 
