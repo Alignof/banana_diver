@@ -50,14 +50,12 @@ impl dtb_mmap {
     fn regist_string(&mut self, name: &str) -> u32 {
         let name = format!("{}\0", name.to_string());
         let offset_of_name = self.strings.current_offset;
-        self.strings.table
+        *self.strings.table
             .entry(name.clone())
             .or_insert_with(|| {
                 self.strings.current_offset += name.len() as u32;
                 offset_of_name
-            });
-
-        offset_of_name
+            })
     }
 
     pub fn write_nodekind(&mut self, kind: FdtNodeKind) {
