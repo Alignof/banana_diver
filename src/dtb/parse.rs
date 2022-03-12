@@ -75,7 +75,7 @@ pub fn parse_property(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap
         }
     } else {
         // only property's name
-        mmap.write_property(prop_name, &mut Vec::new(), 0);
+        mmap.write_property(prop_name.trim_end_matches(';'), &mut Vec::new(), 0);
     }
 }
 
