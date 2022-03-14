@@ -22,6 +22,8 @@ pub struct fdt_header {
 struct Strings {
     pub table: HashMap<String, u32>, // str, offset
     pub current_offset: u32,
+    pub phandle_needed: bool,
+    pub phandle_value: u32,
 }
 
 impl Strings {
@@ -29,6 +31,8 @@ impl Strings {
         Strings {
             table: HashMap::new(),
             current_offset: 0,
+            phandle_needed: false,
+            phandle_value: 1,
         }
     }
 }
@@ -63,6 +67,7 @@ impl dtb_mmap {
     }
 
     pub fn write_property(&mut self, name: &str, data: &mut Vec<u32>, size: u32) {
+        self.write_nodekind(FdtNodeKind::PROP);
         let offset = self.regist_string(name);
         self.structure.push(size); // data len
         self.structure.push(offset); // prop name offset
