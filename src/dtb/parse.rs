@@ -46,12 +46,12 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
                     }
                 })
                 .collect::<Vec<u32>>();
-            let size = bin.len() as u32 * 4;
 
             if data_ch.last() != Some(';') {
                 panic!("{} <-- ';' expected.", data);
             }
 
+            let size = bin.len() as u32 * 4;
             (bin, size)
         },
         _ => panic!("prop data is invalid"),
@@ -62,7 +62,6 @@ pub fn parse_property(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap
     let tokens = &mut util::tokenize(lines, "property is invalid").peekable();
     let prop_name = tokens.next().expect("prop name not found");
 
-    mmap.write_nodekind(FdtNodeKind::PROP);
     if util::consume(tokens, "=") {
         let raw_data = tokens.collect::<Vec<_>>().join(" ");
         let (mut data_map, data_size) = parse_data(&raw_data, mmap);
@@ -75,7 +74,11 @@ pub fn parse_property(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap
         }
     } else {
         // only property's name
-        mmap.write_property(prop_name.trim_end_matches(';'), &mut Vec::new(), 0);
+        let prop_name = prop_name.trim_end_matches(';');
+        mmap.write_property(prop_name, &mut Vec::new(), 0);
+        if prop_name == "interrupt-controller" {
+            mmap.strings.phandle_needed = true;
+        }
     }
 }
 
@@ -100,6 +103,16 @@ pub fn parse_node(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
         parse_line(lines, mmap);
 
         if util::consume(lines, "};") {
+            if mmap.strings.phandle_needed {
+                mmap.write_property(
+                    "phandle",
+                    &mut vec![mmap.strings.phandle_value],
+                    4,
+                );
+                mmap.strings.phandle_needed = false;
+                mmap.strings.phandle_value += 1;
+            }
+
             mmap.write_nodekind(FdtNodeKind::END_NODE);
             break;
         }
