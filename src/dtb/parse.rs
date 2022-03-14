@@ -22,7 +22,7 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
                 })
                 .collect();
 
-            if data_ch.last() != Some(';') {
+            if data_ch.next() != Some(';') {
                 panic!("{} <-- ';' expected.", data);
             }
 
