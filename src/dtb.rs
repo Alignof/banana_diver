@@ -149,9 +149,9 @@ pub fn write_dtb(mmap: dtb_mmap, path: Option<&str>) -> Result<(), Box<dyn std::
         .collect::<Vec<u8>>();
 
     let size_dt_header = 0x28;
-    let size_dt_reserve = util::align_size(reserve.len(), 8);
-    let size_dt_strings = util::align_size(strings.len(), 4);
-    let size_dt_struct = util::align_size(structure.len(), 4);
+    let size_dt_reserve = reserve.len() as u32;
+    let size_dt_strings = strings.len() as u32;
+    let size_dt_struct = structure.len() as u32;
     let totalsize = size_dt_header + size_dt_reserve + size_dt_strings + size_dt_struct;
 
     let header = fdt_header {
