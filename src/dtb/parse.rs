@@ -4,30 +4,19 @@ use super::{dtb_mmap, FdtNodeKind};
 
 pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
     dbg!(data);
+
+    if data.chars().last().unwrap() != ';' {
+        panic!("{} <-- ';' expected.", data);
+    }
+
     let data_ch = &mut data.chars().peekable();
     match data_ch.next().unwrap() {
         '"' => {
-            let mut size: u32 = 0;
-            let mut bin: Vec<u32> = Vec::new();
-
+            let mut str_data = String::new();
             loop {
-                let str_data = format!("{}\0", data_ch
+                str_data = format!("{}{}\0", str_data, data_ch
                     .take_while(|c| *c != '"')
                     .collect::<String>());
-                size += str_data.len() as u32;
-                bin.append(
-                    &mut str_data
-                        .into_bytes()
-                        .chunks(4)
-                        .map(|bs| {
-                            // &[u8] -> [u8; 4]
-                            let mut s = [0; 4];
-                            s[.. bs.len()].clone_from_slice(bs);
-                            u32::from_be_bytes(s)
-                        })
-                        .collect::<Vec<u32>>()
-                );
-
                 if util::consume(data_ch, ',') {
                     util::consume(data_ch, ' ');
                     util::expect(data_ch, '"');
@@ -36,10 +25,17 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
                 }
             }
 
-            if data_ch.next() != Some(';') {
-                //dbg!(data_ch.clone().collect::<String>());
-                panic!("{} <-- ';' expected.", data);
-            }
+            let size = str_data.len() as u32;
+            let bin = str_data
+                .into_bytes()
+                .chunks(4)
+                .map(|bs| {
+                    // &[u8] -> [u8; 4]
+                    let mut s = [0; 4];
+                    s[.. bs.len()].clone_from_slice(bs);
+                    u32::from_be_bytes(s)
+                })
+                .collect::<Vec<u32>>();
 
             (bin, size)
         },
@@ -61,10 +57,6 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
                     }
                 })
                 .collect::<Vec<u32>>();
-
-            if data_ch.last() != Some(';') {
-                panic!("{} <-- ';' expected.", data);
-            }
 
             let size = bin.len() as u32 * 4;
             (bin, size)
