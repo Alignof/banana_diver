@@ -74,9 +74,9 @@ pub fn parse_property(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap
         let (mut data_map, data_size) = parse_data(&raw_data, mmap);
         mmap.write_property(prop_name, &mut data_map, data_size);
 
-        if prop_name == "#address-cells" {
-            if let Some(addr_cells) = mmap.current_label.clone() {
-                mmap.regist_label(addr_cells, data_map[0]);
+        if prop_name == "#interrupt-cells" {
+            if let Some(inter_cells) = mmap.current_label.clone() {
+                mmap.regist_label(inter_cells, data_map[0]);
             }
         }
     } else {
