@@ -4,25 +4,40 @@ use super::{dtb_mmap, FdtNodeKind};
 
 pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
     dbg!(data);
-    let data_ch = &mut data.chars();
+    let data_ch = &mut data.chars().peekable();
     match data_ch.next().unwrap() {
         '"' => {
-            let str_data = format!("{}\0", data_ch
-                .take_while(|c| *c != '"')
-                .collect::<String>());
-            let size = str_data.len() as u32;
-            let bin = str_data
-                .into_bytes()
-                .chunks(4)
-                .map(|bs| {
-                    // &[u8] -> [u8; 4]
-                    let mut s = [0; 4];
-                    s[.. bs.len()].clone_from_slice(bs);
-                    u32::from_be_bytes(s)
-                })
-                .collect();
+            let mut size: u32 = 0;
+            let mut bin: Vec<u32> = Vec::new();
+
+            loop {
+                let str_data = format!("{}\0", data_ch
+                    .take_while(|c| *c != '"')
+                    .collect::<String>());
+                size += str_data.len() as u32;
+                bin.append(
+                    &mut str_data
+                        .into_bytes()
+                        .chunks(4)
+                        .map(|bs| {
+                            // &[u8] -> [u8; 4]
+                            let mut s = [0; 4];
+                            s[.. bs.len()].clone_from_slice(bs);
+                            u32::from_be_bytes(s)
+                        })
+                        .collect::<Vec<u32>>()
+                );
+
+                if util::consume(data_ch, ',') {
+                    util::consume(data_ch, ' ');
+                    util::expect(data_ch, '"');
+                } else {
+                    break;
+                }
+            }
 
             if data_ch.next() != Some(';') {
+                //dbg!(data_ch.clone().collect::<String>());
                 panic!("{} <-- ';' expected.", data);
             }
 
@@ -96,7 +111,7 @@ pub fn parse_node(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
         let node_name = tokens.next().expect("node name not found");
         mmap.write_nodename(node_name);
         mmap.current_label = Some(first.trim_end_matches(':').to_string());
-        util::expect(tokens.next(), "{");
+        util::expect(tokens, "{");
     }
 
     loop {
