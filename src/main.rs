@@ -5,7 +5,7 @@ use clap::{AppSettings, arg};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = clap::command!()
-        .arg(arg!(<inputfile> ... "dts file filename"))
+        .arg(arg!(<inputfile> ... "dts file name"))
         .arg(arg!(-o <outputfile> ... "dtb file name").required(false))
         .setting(AppSettings::DeriveDisplayOrder)
         .get_matches();
