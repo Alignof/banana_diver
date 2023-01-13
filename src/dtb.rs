@@ -52,7 +52,7 @@ impl dtb_mmap {
     }
 
     fn regist_string(&mut self, name: &str) -> u32 {
-        let name = format!("{}\0", name.to_string());
+        let name = format!("{}\0", name);
         let offset_of_name = self.strings.current_offset;
         *self.strings.table.entry(name.clone()).or_insert_with(|| {
             self.strings.current_offset += name.len() as u32;
@@ -64,7 +64,7 @@ impl dtb_mmap {
         self.structure.push(kind as u32);
     }
 
-    pub fn write_property(&mut self, name: &str, data: &mut Vec<u32>, size: u32) {
+    pub fn write_property(&mut self, name: &str, data: &mut [u32], size: u32) {
         self.write_nodekind(FdtNodeKind::PROP);
         let offset = self.regist_string(name);
         self.structure.push(size); // data len
@@ -80,7 +80,6 @@ impl dtb_mmap {
 
         self.structure.append(
             &mut format!("{name}\0")
-                .to_string()
                 .into_bytes()
                 .chunks(4)
                 .map(|bs| {
@@ -139,7 +138,7 @@ pub fn write_dtb(mmap: dtb_mmap, path: Option<&str>) -> Result<(), Box<dyn std::
         .collect::<Vec<u8>>();
 
     let mut str_table = mmap.strings.table.iter().collect::<Vec<(&String, &u32)>>();
-    str_table.sort_by(|a, b| a.1.cmp(&b.1));
+    str_table.sort_by(|a, b| a.1.cmp(b.1));
     let strings = str_table
         .iter()
         .cloned()

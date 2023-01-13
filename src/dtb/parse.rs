@@ -5,7 +5,7 @@ use std::iter::Peekable;
 pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
     dbg!(data);
 
-    if data.chars().last().unwrap() != ';' {
+    if !data.ends_with(';') {
         panic!("{} <-- ';' expected.", data);
     }
 
@@ -51,10 +51,9 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
                         u32::from_str_radix(hex, 16).expect("parsing hex error.")
                     } else {
                         num.parse::<u32>().unwrap_or_else(|_| {
-                            mmap.labels
+                            *mmap.labels
                                 .get(num.trim_start_matches('&'))
                                 .expect("label referencing error.")
-                                .clone()
                         })
                     }
                 })
@@ -128,7 +127,7 @@ pub fn parse_line(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
     dbg!(&lines.peek());
 
     if !util::consume(lines, "") {
-        if lines.peek().unwrap().chars().last() == Some('{') {
+        if lines.peek().unwrap().ends_with('{') {
             parse_node(lines, mmap);
         } else {
             parse_property(lines, mmap);
