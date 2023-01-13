@@ -1,7 +1,7 @@
 mod dtb;
 
+use clap::{arg, AppSettings};
 use std::fs;
-use clap::{AppSettings, arg};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = clap::command!()
@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let input_path = match app.value_of("inputfile") {
         Some(f) => f.to_string(),
-        None => panic!("please specify target ELF file."),
+        None => panic!("please specify target file."),
     };
     let output_path = app.value_of("outputfile");
 

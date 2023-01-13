@@ -1,6 +1,6 @@
-use std::iter::Peekable;
 use super::util;
 use super::{dtb_mmap, FdtNodeKind};
+use std::iter::Peekable;
 
 pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
     dbg!(data);
@@ -14,9 +14,11 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
         '"' => {
             let mut str_data = String::new();
             loop {
-                str_data = format!("{}{}\0", str_data, data_ch
-                    .take_while(|c| *c != '"')
-                    .collect::<String>());
+                str_data = format!(
+                    "{}{}\0",
+                    str_data,
+                    data_ch.take_while(|c| *c != '"').collect::<String>()
+                );
                 if util::consume(data_ch, ',') {
                     util::consume(data_ch, ' ');
                     util::expect(data_ch, '"');
@@ -32,13 +34,13 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
                 .map(|bs| {
                     // &[u8] -> [u8; 4]
                     let mut s = [0; 4];
-                    s[.. bs.len()].clone_from_slice(bs);
+                    s[..bs.len()].clone_from_slice(bs);
                     u32::from_be_bytes(s)
                 })
                 .collect::<Vec<u32>>();
 
             (bin, size)
-        },
+        }
         '<' => {
             let bin = data_ch
                 .take_while(|c| *c != '>')
@@ -60,7 +62,7 @@ pub fn parse_data(data: &str, mmap: &mut dtb_mmap) -> (Vec<u32>, u32) {
 
             let size = bin.len() as u32 * 4;
             (bin, size)
-        },
+        }
         _ => panic!("prop data is invalid"),
     }
 }
@@ -111,11 +113,7 @@ pub fn parse_node(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
 
         if util::consume(lines, "};") {
             if mmap.strings.phandle_needed {
-                mmap.write_property(
-                    "phandle",
-                    &mut vec![mmap.strings.phandle_value],
-                    4,
-                );
+                mmap.write_property("phandle", &mut vec![mmap.strings.phandle_value], 4);
                 mmap.strings.phandle_needed = false;
                 mmap.strings.phandle_value += 1;
             }
@@ -137,5 +135,3 @@ pub fn parse_line(lines: &mut Peekable<std::str::Lines>, mmap: &mut dtb_mmap) {
         }
     }
 }
-
-
