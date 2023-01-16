@@ -80,13 +80,7 @@ fn parse_property(lines: &mut Peekable<std::str::Lines>, label_mgr: &mut LabelMa
             child: None,
         }
     } else {
-        Token {
-            kind: FdtTokenKind::Nop,
-            name: format!(""),
-            data: None,
-            label: None,
-            child: None,
-        }
+        Token::from_kind(FdtTokenKind::Nop)
     }
 }
 

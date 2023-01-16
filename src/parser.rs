@@ -12,11 +12,23 @@ pub enum FdtTokenKind {
 }
 
 pub struct Token {
-    kind: FdtTokenKind,
+    pub kind: FdtTokenKind,
     name: String,
     data: Option<Vec<u32>>,
     label: Option<String>,
     child: Option<Vec<Token>>,
+}
+
+impl Token {
+    pub fn from_kind(kind: FdtTokenKind) -> Self {
+        Token {
+            kind,
+            name: String::new(),
+            data: None,
+            label: None,
+            child: None,
+        }
+    }
 }
 
 pub fn make_tree(dts: String, label_mgr: &mut LabelManager) -> Token {
