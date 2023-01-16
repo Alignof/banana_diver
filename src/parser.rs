@@ -1,4 +1,9 @@
-pub enum FdtNodeKind {
+mod tree;
+mod util;
+
+use crate::LabelManager;
+
+pub enum FdtTokenKind {
     BeginNode = 0x1,
     EndNode = 0x2,
     Prop = 0x3,
@@ -6,24 +11,20 @@ pub enum FdtNodeKind {
     End = 0x9,
 }
 
-pub fn make_tree(dts: String) -> dtb_mmap {
-    let mut mmap: dtb_mmap = dtb_mmap {
-        reserve: vec![0x0, 0x0],
-        structure: Vec::new(),
-        strings: Strings::new(),
-        labels: HashMap::new(),
-        current_label: None,
-    };
+pub struct Token {
+    kind: FdtTokenKind,
+    name: String,
+    data: Option<Vec<u32>>,
+    label: Option<String>,
+    child: Option<Vec<Token>>,
+}
+
+pub fn make_tree(dts: String, label_mgr: &mut LabelManager) -> Token {
     let mut lines = dts.lines().peekable();
 
     if lines.next() != Some("/dts-v1/;") {
         panic!("version isn't specified");
     }
 
-    while lines.peek().is_some() {
-        parse::parse_line(&mut lines, &mut mmap);
-    }
-    mmap.write_nodekind(FdtNodeKind::END);
-
-    mmap
+    tree::parse_node(&mut lines, label_mgr)
 }
