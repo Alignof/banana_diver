@@ -5,7 +5,7 @@ use std::iter::Peekable;
 fn parse_data(data: &str, label_mgr: &mut LabelManager) -> (Option<Vec<u32>>, Option<String>) {
     dbg!(data);
 
-    if data.chars().last().unwrap() != ';' {
+    if !data.ends_with(';') {
         panic!("{} <-- ';' expected.", data);
     }
 
@@ -111,14 +111,14 @@ pub fn parse_node(lines: &mut Peekable<std::str::Lines>, label_mgr: &mut LabelMa
         name,
         data: None,
         label: None,
-        child: if child.len() == 0 { None } else { Some(child) },
+        child: if child.is_empty() { None } else { Some(child) },
     }
 }
 
 fn parse_token(lines: &mut Peekable<std::str::Lines>, label_mgr: &mut LabelManager) -> Token {
     dbg!(&lines.peek());
 
-    if lines.peek().unwrap().chars().last() == Some('{') {
+    if lines.peek().unwrap().ends_with('{') {
         parse_node(lines, label_mgr)
     } else {
         parse_property(lines, label_mgr)

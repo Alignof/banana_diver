@@ -14,12 +14,12 @@ pub fn create_mmap(tree: &Token, mut mmap: DtbMmap) -> DtbMmap {
             }
 
             if let Some(phandle) = mmap.is_phandle_needed(&tree.name) {
-                mmap.write_property("phandle", &mut vec![phandle], 4);
+                mmap.write_property("phandle", &mut [phandle], 4);
             }
             mmap.write_nodekind(FdtTokenKind::EndNode);
         }
         FdtTokenKind::Prop => match &tree.data {
-            Some(data) => mmap.write_property(&tree.name, &data, data.len() as u32),
+            Some(data) => mmap.write_property(&tree.name, data, data.len() as u32),
             None => {
                 let label = tree.label.as_ref().unwrap();
                 let data = mmap
