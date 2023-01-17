@@ -34,10 +34,17 @@ impl LabelManager {
         self.labels.get(label).cloned()
     }
 
-    pub fn is_phandle_needed(&self, label_name: &str) -> Option<u32> {
-        self.lookup(label_name)
-            .as_ref()
-            .and_then(|label| self.phandles.get(label))
+    pub fn is_phandle_needed(&self, node_name: &str) -> Option<u32> {
+        self.labels
+            .iter()
+            .find_map(|(l, n)| {
+                if n.split('/').last() == Some(node_name) {
+                    Some(l)
+                } else {
+                    None
+                }
+            })
+            .and_then(|label_name| self.phandles.get(label_name))
             .copied()
     }
 }
