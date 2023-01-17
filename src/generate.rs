@@ -105,6 +105,8 @@ pub fn create_dtb(
         labels: label_mgr,
     };
 
-    let mmap = create_mmap::create_mmap(&tree, mmap);
+    let mut mmap = create_mmap::create_mmap(&tree, mmap);
+    mmap.write_nodekind(FdtTokenKind::End);
+
     write_dtb::write_dtb(path, mmap)
 }
