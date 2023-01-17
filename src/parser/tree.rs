@@ -2,9 +2,10 @@ use super::{util, FdtTokenKind, Token};
 use crate::LabelManager;
 use std::iter::Peekable;
 
-fn parse_data(data: &str, label_mgr: &mut LabelManager) -> (Option<Vec<u32>>, Option<String>) {
-    dbg!(data);
-
+fn parse_data(
+    data: &str,
+    label_mgr: &mut LabelManager,
+) -> (Option<Vec<u32>>, Option<String>, usize) {
     if !data.ends_with(';') {
         panic!("{} <-- ';' expected.", data);
     }
@@ -27,6 +28,7 @@ fn parse_data(data: &str, label_mgr: &mut LabelManager) -> (Option<Vec<u32>>, Op
                 }
             }
 
+            let size = str_data.len();
             let bin = str_data
                 .into_bytes()
                 .chunks(4)
@@ -38,13 +40,14 @@ fn parse_data(data: &str, label_mgr: &mut LabelManager) -> (Option<Vec<u32>>, Op
                 })
                 .collect::<Vec<u32>>();
 
-            (Some(bin), None)
+            (Some(bin), None, size)
         }
         '<' => {
             let bin = data_ch
                 .take_while(|c| *c != '>')
                 .collect::<String>()
                 .split(' ')
+                .filter(|&x| !x.is_empty())
                 .map(|num| {
                     if let Some(hex) = num.strip_prefix("0x") {
                         u32::from_str_radix(hex, 16).expect("parsing hex error.")
@@ -55,54 +58,75 @@ fn parse_data(data: &str, label_mgr: &mut LabelManager) -> (Option<Vec<u32>>, Op
                     }
                 })
                 .collect::<Vec<u32>>();
+            let size = bin.len() * 4;
 
-            (Some(bin), None)
+            (Some(bin), None, size)
         }
-        '&' => (
-            None,
-            Some(data_ch.take_while(|c| *c != ';').collect::<String>()),
-        ),
+        '&' => {
+            let label_name = data_ch.take_while(|c| *c != ';').collect::<String>();
+            let size = label_name.len();
+            (None, Some(label_name), size)
+        }
         _ => panic!("prop data is invalid"),
     }
 }
 
 fn parse_property(lines: &mut Peekable<std::str::Lines>, label_mgr: &mut LabelManager) -> Token {
     let tokens = &mut util::tokenize(lines, "property is invalid").peekable();
-    let name = tokens.next().expect("prop name not found").to_string();
+    let name = tokens
+        .next()
+        .expect("prop name not found")
+        .trim_start()
+        .to_string();
     if util::consume(tokens, "=") {
         let raw_data = tokens.collect::<Vec<_>>().join(" ");
-        let (data, label) = parse_data(&raw_data, label_mgr);
+        let (data, label, size) = parse_data(&raw_data, label_mgr);
         Token {
             kind: FdtTokenKind::Prop,
             name,
             data,
+            size: Some(size),
             label,
             child: None,
         }
     } else {
-        Token::from_kind(FdtTokenKind::Nop)
+        let name = name.trim_end_matches(';').to_string();
+        Token::no_data_prop(name)
     }
 }
 
-pub fn parse_node(lines: &mut Peekable<std::str::Lines>, label_mgr: &mut LabelManager) -> Token {
+pub fn parse_node(
+    lines: &mut Peekable<std::str::Lines>,
+    label_mgr: &mut LabelManager,
+    node_path: String,
+) -> Token {
     let tokens = &mut util::tokenize(lines, "node is invalid").peekable();
 
     let first = tokens.next().expect("node name not found");
     let name = if util::consume(tokens, "{") {
-        first.to_string()
+        first.trim_start().to_string()
     } else {
-        let node_name = tokens.next().expect("node name not found").to_string();
-        let node_label = first.trim_end_matches(':').to_string();
-        label_mgr.regist_label(node_label, node_name.clone());
+        let node_name = tokens
+            .next()
+            .expect("node name not found")
+            .trim_start()
+            .to_string();
+        let node_label = first.trim_end_matches(':');
+        label_mgr.regist_label(node_label, format!("{node_path}/{node_name}"));
 
         util::expect(tokens, "{");
         node_name
     };
+
     let mut child: Vec<Token> = Vec::new();
-    while util::consume(lines, "};") {
+    while !util::consume_ends_with(lines, "};") {
         // skip empty line
         if !util::consume(lines, "") {
-            child.push(parse_token(lines, label_mgr))
+            if name == "/" {
+                child.push(parse_token(lines, label_mgr, node_path.clone()))
+            } else {
+                child.push(parse_token(lines, label_mgr, format!("{node_path}/{name}")))
+            }
         }
     }
 
@@ -110,16 +134,19 @@ pub fn parse_node(lines: &mut Peekable<std::str::Lines>, label_mgr: &mut LabelMa
         kind: FdtTokenKind::BeginNode,
         name,
         data: None,
+        size: None,
         label: None,
         child: if child.is_empty() { None } else { Some(child) },
     }
 }
 
-fn parse_token(lines: &mut Peekable<std::str::Lines>, label_mgr: &mut LabelManager) -> Token {
-    dbg!(&lines.peek());
-
+fn parse_token(
+    lines: &mut Peekable<std::str::Lines>,
+    label_mgr: &mut LabelManager,
+    node_path: String,
+) -> Token {
     if lines.peek().unwrap().ends_with('{') {
-        parse_node(lines, label_mgr)
+        parse_node(lines, label_mgr, node_path)
     } else {
         parse_property(lines, label_mgr)
     }

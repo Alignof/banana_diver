@@ -23,12 +23,12 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn from_kind(kind: FdtTokenKind) -> Self {
+    pub fn no_data_prop(name: String) -> Self {
         Token {
-            kind,
-            name: String::new(),
-            data: None,
-            size: None,
+            kind: FdtTokenKind::Prop,
+            name,
+            data: Some(vec![]),
+            size: Some(0),
             label: None,
             child: None,
         }
@@ -43,5 +43,5 @@ pub fn make_tree(dts: String, label_mgr: &mut LabelManager) -> Token {
     }
     util::consume(&mut lines, "");
 
-    tree::parse_node(&mut lines, label_mgr)
+    tree::parse_node(&mut lines, label_mgr, String::new())
 }
