@@ -105,6 +105,6 @@ pub fn create_dtb(
         labels: label_mgr,
     };
 
-    let mmap = create_mmap::create_mmap(dbg!(&tree), mmap);
-    write_dtb::write_dtb(path, dbg!(mmap))
+    let mmap = create_mmap::create_mmap(&tree, mmap);
+    write_dtb::write_dtb(path, mmap)
 }
