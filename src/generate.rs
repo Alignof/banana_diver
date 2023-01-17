@@ -19,6 +19,7 @@ pub struct FdtHeader {
     size_dt_struct: u32,
 }
 
+#[derive(Debug)]
 struct Strings {
     pub table: HashMap<String, u32>, // str, offset
     pub current_offset: u32,
@@ -33,6 +34,7 @@ impl Strings {
     }
 }
 
+#[derive(Debug)]
 pub struct DtbMmap {
     reserve: Vec<u64>,
     structure: Vec<u32>,
@@ -62,10 +64,10 @@ impl DtbMmap {
         self.structure.push(kind as u32);
     }
 
-    pub fn write_property(&mut self, name: &str, data: &[u32], size: u32) {
+    pub fn write_property(&mut self, name: &str, data: &[u32], size: usize) {
         self.write_nodekind(FdtTokenKind::Prop);
         let offset = self.regist_string(name);
-        self.structure.push(size); // data len
+        self.structure.push(size as u32); // data len
         self.structure.push(offset); // prop name offset
         self.structure.extend_from_slice(data);
     }
@@ -103,6 +105,6 @@ pub fn create_dtb(
         labels: label_mgr,
     };
 
-    let mmap = create_mmap::create_mmap(&tree, mmap);
-    write_dtb::write_dtb(path, mmap)
+    let mmap = create_mmap::create_mmap(dbg!(&tree), mmap);
+    write_dtb::write_dtb(path, dbg!(mmap))
 }

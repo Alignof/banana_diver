@@ -19,7 +19,7 @@ pub fn create_mmap(tree: &Token, mut mmap: DtbMmap) -> DtbMmap {
             mmap.write_nodekind(FdtTokenKind::EndNode);
         }
         FdtTokenKind::Prop => match &tree.data {
-            Some(data) => mmap.write_property(&tree.name, data, data.len() as u32),
+            Some(data) => mmap.write_property(&tree.name, data, tree.size.unwrap()),
             None => {
                 let label = tree.label.as_ref().unwrap();
                 let data = mmap
@@ -33,7 +33,7 @@ pub fn create_mmap(tree: &Token, mut mmap: DtbMmap) -> DtbMmap {
                         u32::from_be_bytes(s)
                     })
                     .collect::<Vec<u32>>();
-                mmap.write_property(&tree.name, &data, data.len() as u32);
+                mmap.write_property(&tree.name, &data, data.len());
             }
         },
         _ => (),
