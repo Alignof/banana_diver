@@ -13,10 +13,10 @@ pub enum FdtTokenKind {
 
 pub struct Token {
     pub kind: FdtTokenKind,
-    name: String,
-    data: Option<Vec<u32>>,
-    label: Option<String>,
-    child: Option<Vec<Token>>,
+    pub name: String,
+    pub data: Option<Vec<u32>>,
+    pub label: Option<String>,
+    pub child: Option<Vec<Token>>,
 }
 
 impl Token {
