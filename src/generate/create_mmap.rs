@@ -14,7 +14,7 @@ pub fn create_mmap(tree: &Token, mut mmap: DtbMmap) -> DtbMmap {
             }
 
             if let Some(phandle) = mmap.is_phandle_needed(&tree.name) {
-                mmap.write_property("phandle", &mut [phandle], 4);
+                mmap.write_property("phandle", &[phandle], 4);
             }
             mmap.write_nodekind(FdtTokenKind::EndNode);
         }
