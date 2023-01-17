@@ -1,7 +1,10 @@
-mod dtb;
+mod generate;
+mod label;
+mod parser;
 
+use clap::{arg, AppSettings};
+use label::LabelManager;
 use std::fs;
-use clap::{AppSettings, arg};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = clap::command!()
@@ -12,16 +15,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let input_path = match app.value_of("inputfile") {
         Some(f) => f.to_string(),
-        None => panic!("please specify target ELF file."),
+        None => panic!("please specify target file."),
     };
     let output_path = app.value_of("outputfile");
 
     let dts = fs::read_to_string(input_path)
         .expect("opening file failed.")
         .replace("  ", "");
-    let dtb = dtb::make_dtb(dts);
 
-    dtb::write_dtb(dtb, output_path)?;
+    let mut label_mgr: LabelManager = LabelManager::new();
+    let tree = parser::make_tree(dts, &mut label_mgr);
+
+    generate::create_dtb(output_path, tree, label_mgr)?;
 
     Ok(())
 }
