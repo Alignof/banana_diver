@@ -4,6 +4,7 @@ mod write_dtb;
 use std::collections::HashMap;
 
 use crate::parser::{FdtTokenKind, Token};
+use crate::LabelManager;
 
 pub struct FdtHeader {
     magic: u32,
@@ -36,6 +37,7 @@ pub struct DtbMmap {
     reserve: Vec<u64>,
     structure: Vec<u32>,
     strings: Strings,
+    labels: LabelManager,
 }
 
 impl DtbMmap {
@@ -48,11 +50,19 @@ impl DtbMmap {
         })
     }
 
+    pub fn label_lookup(&self, label: &str) -> String {
+        self.labels.lookup(label).expect("label not found")
+    }
+
+    pub fn is_phandle_needed(&self, label_name: &str) -> Option<u32> {
+        self.labels.is_phandle_needed(label_name)
+    }
+
     pub fn write_nodekind(&mut self, kind: FdtTokenKind) {
         self.structure.push(kind as u32);
     }
 
-    pub fn write_property(&mut self, name: &str, data: &mut [u32], size: u32) {
+    pub fn write_property(&mut self, name: &str, data: &[u32], size: u32) {
         self.write_nodekind(FdtTokenKind::Prop);
         let offset = self.regist_string(name);
         self.structure.push(size); // data len
@@ -81,13 +91,18 @@ impl DtbMmap {
     }
 }
 
-pub fn create_dtb(path: Option<&str>, tree: Token) -> Result<(), Box<dyn std::error::Error>> {
-    let mut mmap = DtbMmap {
+pub fn create_dtb(
+    path: Option<&str>,
+    tree: Token,
+    label_mgr: LabelManager,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mmap = DtbMmap {
         reserve: vec![0x0, 0x0],
         structure: Vec::new(),
         strings: Strings::new(),
+        labels: label_mgr,
     };
 
-    let mmap = create_mmap::create_mmap(tree, mmap);
+    let mmap = create_mmap::create_mmap(&tree, mmap);
     write_dtb::write_dtb(path, mmap)
 }
