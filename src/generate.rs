@@ -19,7 +19,6 @@ pub struct FdtHeader {
     size_dt_struct: u32,
 }
 
-#[derive(Debug)]
 struct Strings {
     pub table: HashMap<String, u32>, // str, offset
     pub current_offset: u32,
@@ -34,7 +33,6 @@ impl Strings {
     }
 }
 
-#[derive(Debug)]
 pub struct DtbMmap {
     reserve: Vec<u64>,
     structure: Vec<u32>,

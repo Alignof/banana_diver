@@ -3,7 +3,7 @@ mod util;
 
 use crate::LabelManager;
 
-#[derive(Debug)]
+#[allow(dead_code)]
 pub enum FdtTokenKind {
     BeginNode = 0x1,
     EndNode = 0x2,
@@ -12,7 +12,6 @@ pub enum FdtTokenKind {
     End = 0x9,
 }
 
-#[derive(Debug)]
 pub struct Token {
     pub kind: FdtTokenKind,
     pub name: String,

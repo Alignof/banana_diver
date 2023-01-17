@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-#[derive(Debug)]
 pub struct LabelManager {
     labels: HashMap<String, String>,
     phandles: HashMap<String, u32>,
