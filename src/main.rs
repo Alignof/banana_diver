@@ -1,4 +1,4 @@
-mod memmap;
+mod generate;
 mod parser;
 
 use clap::{arg, AppSettings};
@@ -30,6 +30,17 @@ impl LabelManager {
             self.current_phandle
         })
     }
+
+    pub fn lookup(&self, label: &str) -> Option<String> {
+        self.labels.get(label).cloned()
+    }
+
+    pub fn is_phandle_needed(&self, label_name: &str) -> Option<u32> {
+        self.lookup(label_name)
+            .as_ref()
+            .and_then(|label| self.phandles.get(label))
+            .copied()
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -52,7 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut label_mgr: LabelManager = LabelManager::new();
     let tree = parser::make_tree(dts, &mut label_mgr);
 
-    memmap::write_dtb(output_path)?;
+    generate::create_dtb(output_path, tree, label_mgr)?;
 
     Ok(())
 }
